@@ -15,7 +15,7 @@ type Tile struct {
 }
 
 func HandleRoot(writer http.ResponseWriter, request *http.Request) {
-	dir := "./client/dist/portfolio"
+	dir := "./client/dist"
 	// Create a file server handler for the chosen directory
 	fs := http.FileServer(http.Dir(dir))
 

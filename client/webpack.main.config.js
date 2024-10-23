@@ -7,7 +7,7 @@ module.exports = {
     },
     output: {
         filename: 'bundle.js', // Output bundle file in separate directories
-        path: path.resolve(__dirname, 'dist/main'),
+        path: path.resolve(__dirname, 'dist'),
         publicPath: './', // Set publicPath to './' to ensure correct script file path
         clean: true, // Clean the output directory before emit
     },
