@@ -1,0 +1,33 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 100%;
+    background-color: white;
+    color: black;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    body {
+        width: 100%;
+        background-color: black;
+        color: white;
+    }
+}
+
+.tile-field {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.top-right {
+    position: absolute;
+    top: 0;
+    right: 0;
+}

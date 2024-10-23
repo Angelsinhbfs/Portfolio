@@ -1,0 +1,90 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    color: black;
+    border: 1px black;
+}
+
+@media (prefers-color-scheme: dark) {
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: black;
+        color: white;
+        border: 1px white;
+
+    }
+    .modal-overlay textarea {
+        flex: 1;
+        background-color: black;
+        color: white;
+    }
+    .modal-overlay input {
+        background-color: black;
+        color: white;
+        border: 1px white;
+    }
+}
+
+.modal-content {
+    padding: 20px;
+    border-radius: 5px;
+    position: relative;
+    overflow: auto;
+    min-height: 80vh;
+    min-width: 80vh;
+    max-height: 95vh;
+    max-width: 95vw;
+    display: flex;
+}
+
+.modal-input {
+    border: 1px solid black;
+    padding: 20px;
+    min-width: 400px;
+    min-height: 400px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-input label {
+    margin-bottom: 5px;
+}
+
+.modal-input textarea {
+    flex: 1;
+}
+
+.modal-preview {
+    padding: 20px;
+    min-width: 400px;
+    height: 80vh;
+    align-self: flex-end;
+    border: 1px solid black;
+    overflow-y: auto;
+    flex: 1;
+}
+
+p.indented {
+    text-indent: 20px;
+}
+
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
