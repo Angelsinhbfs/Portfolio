@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      EXPECTED_USER: your_expected_user
+      EXPECTED_KEY: your_expected_key
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: portfolio
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

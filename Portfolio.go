@@ -23,7 +23,12 @@ func main() {
 	if ExpectedUser == "" || ExpectedKey == "" {
 		log.Fatal("Credentials not set in env")
 	}
-	DBClient, err = db.NewMongoClient("mongodb://localhost:27017", "Portfolio")
+	mongoURI := os.Getenv("MONGODB_URI")
+	dbName := os.Getenv("MONGODB_DB_NAME")
+	if mongoURI == "" || dbName == "" {
+		log.Fatal("MongoDB connection information not set in env")
+	}
+	DBClient, err = db.NewMongoClient(mongoURI, dbName)
 	if err != nil {
 		log.Fatal("Error connecting to database:", err)
 	}
