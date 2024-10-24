@@ -39,6 +39,12 @@
     }
 }
 
+.modal-overlay img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
 .modal-content {
     padding: 20px;
     border-radius: 5px;

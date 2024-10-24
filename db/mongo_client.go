@@ -2,9 +2,9 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -28,12 +28,39 @@ func NewMongoClient(uri, dbName string) (*MongoClient, error) {
 	}, nil
 }
 
-func (mc *MongoClient) GetImage(ctx context.Context, imageID string) (string, error) {
-	// TODO: Implement the method
-	return "", errors.New("GetImage not implemented")
+func (mc *MongoClient) AddPortfolioEntry(ctx context.Context, entry interface{}) (interface{}, error) {
+	collection := mc.client.Database("portfolio").Collection("entries")
+
+	entryBSON, err := bson.Marshal(entry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal entry: %v", err)
+	}
+	result, err := collection.InsertOne(ctx, entryBSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add entry: %v", err)
+	}
+	return result.InsertedID, nil
 }
 
-func (mc *MongoClient) AddPortfolioEntry(ctx context.Context, entry interface{}) (interface{}, error) {
+func (mc *MongoClient) DeletePortfolioEntry(ctx context.Context, entry string) (interface{}, error) {
+	collection := mc.client.Database("portfolio").Collection("entries")
+	// Convert entry string to ObjectID
+	objID, err := primitive.ObjectIDFromHex(entry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert entry to ObjectID: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+
+	result, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete entry: %v", err)
+	}
+
+	return result.DeletedCount, nil
+}
+
+func (mc *MongoClient) EditPortfolioEntry(ctx context.Context, entry interface{}) (interface{}, error) {
 	collection := mc.client.Database("portfolio").Collection("entries")
 
 	entryBSON, err := bson.Marshal(entry)

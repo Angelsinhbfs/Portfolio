@@ -13,11 +13,11 @@ function Md2HTML(markdown: string): string {
     // Convert unordered lists
     markdown = markdown.replace(/^\s*-\s+(.*$)/gim, '<ul><li>$1</li></ul>');
 
-    // Convert links
-    markdown = markdown.replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>');
+    // Convert links excluding lines starting with '!'
+    markdown = markdown.replace(/(?<!\!)\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>');
 
     // Convert images
-    markdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" />');
+    markdown = markdown.replace(/!\[(.*?)\]\((.*?)\)/gim, '<img alt="$1" src="$2" title="$1"/>');
 
     // Replace line breaks with <br>
     markdown = markdown.replace(/\n$/gim, '<br />');
@@ -36,7 +36,7 @@ function Md2HTML(markdown: string): string {
     markdown = markdown.replace(/\[x\]/g, '<input type="checkbox" checked disabled />'); // Checked checkbox
 
     // Handle paragraphs
-    markdown = markdown.replace(/(.+)(?:\r?\n)(?![\r\n])/g, '<p class="indented">$1</p>');
+    markdown = markdown.replace(/(.+)(?:\r?\n|\r)(?![\r\n])/g, '<p class="indented">$1</p>');
 
     return markdown.trim();
 }

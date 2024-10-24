@@ -1,10 +1,19 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
 
 type Tile struct {
@@ -13,6 +22,8 @@ type Tile struct {
 	Tags    []string `json:"tags"`
 	Details string   `json:"details"`
 }
+
+var tokens []string
 
 func HandleRoot(writer http.ResponseWriter, request *http.Request) {
 	dir := "./client/dist"
@@ -24,62 +35,119 @@ func HandleRoot(writer http.ResponseWriter, request *http.Request) {
 
 }
 
-func HandlePortfolioImg(w http.ResponseWriter, r *http.Request) {
-	var isValid = true
-	cookie, err := r.Cookie("token")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			isValid = false
-		}
-		isValid = false
+func CallbackHandler(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("code")
+	if token == "" {
+		http.Error(w, "Token not found", http.StatusBadRequest)
+		return
 	}
 
-	tokenString := cookie.Value
-	_, err = ValidateJWT(tokenString) //this is just for portfolio,
-	// otherwise the claims with username would be a good way to get images to the correct user folder
-	if err != nil {
-		isValid = false
-	}
+	// Set the token in a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   true, // Set to true if using HTTPS
+		Path:     "/",
+	})
 
-	switch r.Method {
-	case http.MethodGet:
-		//get the image from the argument
-		break
-	case http.MethodPost:
-		if !isValid {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		//upload the image and save it in the file system. then return the url
-		break
-	case http.MethodDelete:
-		if !isValid {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		//delete the image from the filesystem
-		break
-	}
+	// Redirect to the home page or another page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-func HandleCreateTile(w http.ResponseWriter, r *http.Request) {
-	//cookie, err := r.Cookie("token")
-	//if err != nil {
-	//	if err == http.ErrNoCookie {
-	//		w.WriteHeader(http.StatusUnauthorized)
-	//		return
-	//	}
-	//	w.WriteHeader(http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//tokenString := cookie.Value
-	//claims, err := ValidateJWT(tokenString)
-	//if err != nil {
-	//	w.WriteHeader(http.StatusUnauthorized)
-	//	return
-	//}
 
-	// If we reach here, the token is valid
+func GetImg(w http.ResponseWriter, r *http.Request) {
+	// Get the image from the argument
+	fileName := r.URL.Query().Get("filename")
+	if fileName == "" {
+		http.Error(w, "Missing filename parameter", http.StatusBadRequest)
+		return
+	}
+
+	filePath := filepath.Join("uploads", fileName)
+	file, err := os.Open(filePath)
+	if err != nil {
+		http.Error(w, "Error opening the file", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Set the appropriate content type based on the file extension
+	fileInfo, err := file.Stat()
+	if err != nil {
+		http.Error(w, "Error getting file information", http.StatusInternalServerError)
+		return
+	}
+	http.ServeContent(w, r, fileName, fileInfo.ModTime(), file)
+}
+
+func PostImg(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20) // 10 MB max file size
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, handler, err := r.FormFile("image")
+	if err != nil {
+		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Create a unique filename for the image
+	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), handler.Filename)
+	filePath := filepath.Join("uploads", fileName)
+
+	// Create the directory if it does not exist
+	err = os.MkdirAll("uploads", 0755)
+	if err != nil {
+		http.Error(w, "Error creating directory", http.StatusInternalServerError)
+		return
+	}
+	// Create a new file in the uploads directory
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		http.Error(w, "Error saving the file", http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	// Copy the file to the new file
+	_, err = io.Copy(f, file)
+	if err != nil {
+		http.Error(w, "Error copying the file", http.StatusInternalServerError)
+		return
+	}
+
+	// Generate the URL for the saved image
+	imageURL := "http://localhost:8080/portfolio/img?filename=" + fileName
+
+	// Return the URL in the response
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"url": imageURL})
+}
+
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	token, _ := randomHex(20)
+	tokens = append(tokens, token)
+	//// Set the cookie domain to localhost
+	//domain := "localhost" // Update this with your specific domain
+	//
+	//http.SetCookie(w, &http.Cookie{
+	//	Name:     "Authorization",
+	//	Value:    token,
+	//	HttpOnly: true,
+	//	Secure:   false, // Set to true if using HTTPS
+	//	Path:     "/",
+	//	Domain:   domain, // Set the cookie domain here
+	//	SameSite: http.SameSiteNoneMode,
+	//})
+	w.Header().Set("token", token)
+	w.WriteHeader(http.StatusOK)
+}
+
+func HandleCreateTile(w http.ResponseWriter, r *http.Request) {
+	//If we reach here, the token is valid
 	//w.Write([]byte(fmt.Sprintf("Welcome %s!", claims.Username)))
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
@@ -109,14 +177,6 @@ func HandleCreateTile(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleLoadTiles(w http.ResponseWriter, r *http.Request) {
-	//tiles := []Tile{
-	//	{
-	//		Id:      "lkajf9o924laksgladflkjvafarg334",
-	//		Label:   "tile loaded from api",
-	//		Tags:    []string{},
-	//		Details: "# this is the headline /n /n and these are some details",
-	//	},
-	//}
 	tiles, err := DBClient.GetPortfolioEntries(CTX)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -134,25 +194,7 @@ func HandleLoadTiles(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 func HandleEditTile(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("token")
-	if err != nil {
-		if err == http.ErrNoCookie {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	tokenString := cookie.Value
-	claims, err := ValidateJWT(tokenString)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// If we reach here, the token is valid
-	w.Write([]byte(fmt.Sprintf("Welcome %s!", claims.Username)))
+	w.WriteHeader(http.StatusAccepted)
 	//check to see if the tile exists
 	//if it does, update it
 	//else create a new tile
@@ -160,26 +202,73 @@ func HandleEditTile(w http.ResponseWriter, r *http.Request) {
 	//return json of the new tile
 }
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("token")
+
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	var nTile Tile
+	err := d.Decode(&nTile)
 	if err != nil {
-		if err == http.ErrNoCookie {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		// bad JSON or unrecognized json field
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Extract the ID from the incoming Tile data
+	deleteID := nTile.Id
+
+	_, err = DBClient.DeletePortfolioEntry(CTX, deleteID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func randomHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
+}
+
+func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username, password, ok := r.BasicAuth()
+		if ok {
+			usernameHash := sha256.Sum256([]byte(username))
+			passwordHash := sha256.Sum256([]byte(password))
+			expectedUsernameHash := sha256.Sum256([]byte(ExpectedUser))
+			expectedPasswordHash := sha256.Sum256([]byte(ExpectedKey))
+
+			usernameMatch := subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1
+			passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1
+
+			if usernameMatch && passwordMatch {
+
+				next.ServeHTTP(w, r)
+				return
+			}
 		}
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
-	tokenString := cookie.Value
-	claims, err := ValidateJWT(tokenString)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
+}
 
-	// If we reach here, the token is valid
-	w.Write([]byte(fmt.Sprintf("Welcome %s!", claims.Username)))
-	//delete all images linked in the tile
-	//remove the tile from the database
-	//return a code to indicate success
+func CheckToken(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bToken := r.Header.Get("Authorization")
+		if bToken != "" {
+			reqToken := strings.Split(bToken, " ")[1]
+			for _, token := range tokens {
+				if token == reqToken {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+		}
+		// If token is not found or does not match, return unauthorized
+		w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	})
 }

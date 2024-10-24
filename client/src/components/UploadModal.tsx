@@ -1,7 +1,8 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, {FormEvent, useState} from 'react';
 import Modal from "./Modal";
 import MarkdownPreview from "./MarkdownPreview";
 import "../styles/Modal.css"
+import fetchWithToken from "../../fetchWithToken";
 
 interface UploadModalProps {
     isOpen: boolean;
@@ -13,37 +14,45 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
     const [title, setTitle] = useState<string>('');
     const [tags, setTags] = useState<string>('');
     const [body, setBody] = useState<string>('');
-    const [image, setImage] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState<string>('');
 
-    const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImage(e.target.files[0]);
+    const uploadImage = async (blob: Blob): Promise<string> => {
+        const formData = new FormData();
+        formData.append('image', blob);
+
+        try {
+            const response = await fetchWithToken(`${origin}portfolio/img/`, {
+                method: 'POST',
+                body: formData,
+            });
+            return response.url;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            return '';
         }
     };
 
-    const handleImageUpload = async () => {
-        if (!image) return;
+    const handleImagePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        const items = e.clipboardData?.items;
+        if (items) {
+            let newBody = body; // Initialize newBody with the current body content
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    e.preventDefault(); // Prevent the default paste behavior
 
-        const formData = new FormData();
-        formData.append('image', image);
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        const startPos = e.currentTarget?.selectionStart || 0;
+                        const endPos = e.currentTarget?.selectionEnd || 0;
+                        const imageUrl = await uploadImage(blob);
 
-        try {
-            const response = await fetch(`${origin}portfolio/img`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: formData,
-            });
-            if (!response.ok){
-                throw new Error('Network response was not ok')
+
+                        const imageTag = `![Pasted Image](${imageUrl})`;
+                        newBody = newBody.slice(0, startPos) + imageTag + newBody.slice(endPos);
+                    }
+                }
             }
-            const data = await response.json();
-
-            setImageUrl(data.url);
-        } catch (error) {
-            console.error('Error uploading image:', error);
+            setBody(newBody); // Update the body content with all pasted images
         }
     };
 
@@ -51,7 +60,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
         e.preventDefault();
 
         try {
-            const response = await fetch(`${origin}portfolio/create`, {
+            const response = await fetchWithToken(`${origin}portfolio/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -62,12 +71,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
                     'details': body,
                 }),
             });
-            if (!response.ok){
-                throw new Error('Network response was not ok')
-            }
-            const data = await response.json();
-
-            setImageUrl(data.url);
+            setImageUrl(response.url);
         } catch (error) {
             console.error('Error uploading tile data:', error);
         }
@@ -76,7 +80,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onRequestClose}>
+        <Modal isOpen={isOpen} onClose={onRequestClose} isAuth={true}>
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>Title:</label>
@@ -87,15 +91,15 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
                 <div className="modal-content">
                     <div className="modal-input">
                         <label>Input</label>
-                        <textarea  value={body} onChange={(e) => setBody(e.target.value)} required />
+                        <textarea  value={body} onChange={(e) => setBody(e.target.value)} onPaste={handleImagePaste} required />
                     </div>
                     <MarkdownPreview markdown={body} /> {/* Render the MarkdownPreview component */}
                 </div>
-                <div>
-                    <label>Image:</label>
-                    <input type="file" accept="image/*" onChange={handleImageChange} />
-                    <button type="button" onClick={handleImageUpload}>Upload Image</button>
-                </div>
+                {/*<div>*/}
+                {/*    <label>Image:</label>*/}
+                {/*    <input type="file" accept="image/*" onChange={handleImageChange} />*/}
+                {/*    <button type="button" onClick={handleImageUpload}>Upload Image</button>*/}
+                {/*</div>*/}
                 {imageUrl && <img src={imageUrl} alt="Uploaded" style={{ maxWidth: '100%' }} />}
                 <button type="submit">Submit</button>
             </form>

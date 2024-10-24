@@ -4,11 +4,14 @@ import '../styles/Modal.css'
 
 interface ModalProps {
     isOpen: boolean;
+    isAuth: boolean;
     onClose: () => void;
+    onDelete?: () => void;
+    onEdit?: () => void;
     children: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, isAuth, onClose, onDelete, onEdit, children }) => {
     useEffect(()=>{
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -31,6 +34,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
             <div className="modal-content">
                 <button onClick={onClose} className="close-button">X</button>
                 {children}
+                {isAuth ? (
+                    <div>
+                    <button onClick={onDelete}>Delete</button>
+                    <button onClick={onEdit}>Edit</button>
+                    </div>
+                ):(<button onClick={onClose} className="close-button">X</button>)}
             </div>
         </div>,
         document.body
