@@ -19,7 +19,10 @@ const App: React.FC = () => {
     const openModal = () => setModalOpen(true);
     const closeModal = () => setModalOpen(false);
     const openUpload = () => setUploadOpen(true);
-    const closeUpload = () => setUploadOpen(false);
+    const closeUpload = () => {
+        setUploadOpen(false);
+        fetchTileList().then();
+    }
     const getDetails = (details:string, tileId:string) => {
         setTileInfo(details);
         setTileId(tileId);
@@ -37,6 +40,8 @@ const App: React.FC = () => {
                     'id': tileId,
                 }),
             });
+            await fetchTileList();
+            closeModal();
         } catch (error) {
             console.error('Error fetching tile list:', error);
             throw error; // Re-throw the error
@@ -49,7 +54,7 @@ const App: React.FC = () => {
 
     const fetchTileList = async () => {
         try {
-            const response = await fetch(`${origin}portfolio/load`);
+            const response = await fetch(`${origin}portfolio/load/`);
             if (response.ok) {
                 const data = await response.json();
                 setTileList(data); // Assuming the response data is an array of tiles
@@ -128,7 +133,7 @@ const App: React.FC = () => {
             </p>
             <div className="tile-field" id="tile field">
                 {tileList.map((tile, index) => (
-                    <PTile key={index} label={tile.label} onClick={openModal} callback={getDetails} tileDetails={tile.details} tileId={tileId} />
+                    <PTile key={index} label={tile.label} onClick={openModal} callback={getDetails} tileDetails={tile.details} tileId={tile._id} />
                 ))}
             </div>
 

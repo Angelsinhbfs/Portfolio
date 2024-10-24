@@ -17,7 +17,7 @@ import (
 )
 
 type Tile struct {
-	Id      string   `json:"_id"`
+	Id      string   `json:"id"`
 	Label   string   `json:"label"`
 	Tags    []string `json:"tags"`
 	Details string   `json:"details"`

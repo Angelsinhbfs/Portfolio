@@ -36,8 +36,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, isAuth, onClose, onDelete, onEdit
                 {children}
                 {isAuth ? (
                     <div>
-                    <button onClick={onDelete}>Delete</button>
-                    <button onClick={onEdit}>Edit</button>
+                        <button onClick={onDelete} className="delete-button">Delete</button>
+                        <button onClick={onEdit} className="update-button">Edit</button>
                     </div>
                 ):(<button onClick={onClose} className="close-button">X</button>)}
             </div>

@@ -60,7 +60,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
         e.preventDefault();
 
         try {
-            const response = await fetchWithToken(`${origin}portfolio/create`, {
+            const response = await fetchWithToken(`${origin}portfolio/create/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -71,7 +71,9 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
                     'details': body,
                 }),
             });
-            setImageUrl(response.url);
+            setTitle('');
+            setTags('');
+            setBody('');
         } catch (error) {
             console.error('Error uploading tile data:', error);
         }
