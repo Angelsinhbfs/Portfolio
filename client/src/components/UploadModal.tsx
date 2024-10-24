@@ -1,4 +1,4 @@
-import React, {FormEvent, useState} from 'react';
+import React, {FormEvent, useEffect, useState} from 'react';
 import Modal from "./Modal";
 import MarkdownPreview from "./MarkdownPreview";
 import "../styles/Modal.css"
@@ -8,13 +8,23 @@ interface UploadModalProps {
     isOpen: boolean;
     onRequestClose: () => void;
     origin: string;
+    update: PortfolioEntry | null;
 }
 
-const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origin }) => {
+const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origin, update }) => {
     const [title, setTitle] = useState<string>('');
     const [tags, setTags] = useState<string>('');
     const [body, setBody] = useState<string>('');
-    const [imageUrl, setImageUrl] = useState<string>('');
+    const [id, setId] = useState<string>('');
+
+    useEffect(() => {
+        if (update) {
+            setTitle(update.label || ''); // Initialize title with update.title if available
+            setTags(update.tags ? update.tags.join(' ') : ''); // Initialize tags with update.tags if available
+            setBody(update.details || ''); // Initialize body with update.body if available
+            setId(update._id || '');
+        }
+    }, [update]);
 
     const uploadImage = async (blob: Blob): Promise<string> => {
         const formData = new FormData();
@@ -66,6 +76,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
+                    'id': id,
                     'label': title,
                     'tags': tags.split(' '),
                     'details': body,
@@ -74,6 +85,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
             setTitle('');
             setTags('');
             setBody('');
+            setId('');
         } catch (error) {
             console.error('Error uploading tile data:', error);
         }
@@ -97,12 +109,6 @@ const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onRequestClose, origi
                     </div>
                     <MarkdownPreview markdown={body} /> {/* Render the MarkdownPreview component */}
                 </div>
-                {/*<div>*/}
-                {/*    <label>Image:</label>*/}
-                {/*    <input type="file" accept="image/*" onChange={handleImageChange} />*/}
-                {/*    <button type="button" onClick={handleImageUpload}>Upload Image</button>*/}
-                {/*</div>*/}
-                {imageUrl && <img src={imageUrl} alt="Uploaded" style={{ maxWidth: '100%' }} />}
                 <button type="submit">Submit</button>
             </form>
         </Modal>

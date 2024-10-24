@@ -147,8 +147,6 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleCreateTile(w http.ResponseWriter, r *http.Request) {
-	//If we reach here, the token is valid
-	//w.Write([]byte(fmt.Sprintf("Welcome %s!", claims.Username)))
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	var nTile Tile
@@ -158,22 +156,38 @@ func HandleCreateTile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id, err := DBClient.AddPortfolioEntry(CTX, nTile)
-	nTile.Id = id.(primitive.ObjectID).Hex()
+	// Check if the tile with the same ID already exists
+	existingTile, err := DBClient.GetPortfolioEntryByID(CTX, nTile.Id)
+	if err != nil {
+		// Handle error when checking for existing tile
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if existingTile != nil {
+		// Update the existing tile instead of adding a new entry
+		_, err := DBClient.UpdatePortfolioEntry(CTX, nTile.Id, nTile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Add a new entry if the tile doesn't exist
+		id, err := DBClient.AddPortfolioEntry(CTX, nTile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		nTile.Id = id.(primitive.ObjectID).Hex()
+	}
 
 	jsonData, err := json.Marshal(nTile)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	//DBClient.AddPortfolioEntry(CTX,string(body))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
-	//if it does, update it
-	//else create a new tile
-	//add the tile to the database
-	//return json of the new tile
 }
 
 func HandleLoadTiles(w http.ResponseWriter, r *http.Request) {
@@ -194,12 +208,25 @@ func HandleLoadTiles(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 func HandleEditTile(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusAccepted)
-	//check to see if the tile exists
-	//if it does, update it
-	//else create a new tile
-	//add the tile to the database
-	//return json of the new tile
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	var nTile Tile
+	err := d.Decode(&nTile)
+	if err != nil {
+		// bad JSON or unrecognized json field
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, err := DBClient.AddPortfolioEntry(CTX, nTile)
+	nTile.Id = id.(primitive.ObjectID).Hex()
+
+	jsonData, err := json.Marshal(nTile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
 }
 func HandleDelete(w http.ResponseWriter, r *http.Request) {
 

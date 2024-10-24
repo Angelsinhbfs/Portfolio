@@ -15,10 +15,19 @@ const App: React.FC = () => {
     const [tileList,setTileList] = useState<PortfolioEntry[]>([]);
     const [origin,assignOrigin] = useState('')
     const [isLoggedIn, setIsLoggedIn] = useState(false); // State to track user login status
+    const [toUpdate, setToUpdate] = useState<PortfolioEntry | null>(null)
 
     const openModal = () => setModalOpen(true);
     const closeModal = () => setModalOpen(false);
     const openUpload = () => setUploadOpen(true);
+    const edit = (toEdit:string) => {
+        const filteredEntry = tileList.find(entry=>entry._id === toEdit);
+        if (filteredEntry) {
+            setToUpdate(filteredEntry);
+            return;
+        }
+        setToUpdate(null);
+    }
     const closeUpload = () => {
         setUploadOpen(false);
         fetchTileList().then();
@@ -49,7 +58,9 @@ const App: React.FC = () => {
     }
 
     const editEntry = () => {
-        console.log("edit clicked")
+        edit(tileId);
+        closeModal();
+        openUpload();
     }
 
     const fetchTileList = async () => {
@@ -132,12 +143,12 @@ const App: React.FC = () => {
                 Below you will find more information about some of my work. I hope you enjoy ^_^
             </p>
             <div className="tile-field" id="tile field">
-                {tileList.map((tile, index) => (
+                {tileList && tileList.map((tile, index) => (
                     <PTile key={index} label={tile.label} onClick={openModal} callback={getDetails} tileDetails={tile.details} tileId={tile._id} />
                 ))}
             </div>
 
-            <UploadModal isOpen={isUploadOpen} onRequestClose={closeUpload} origin={`${origin}`}/>
+            <UploadModal isOpen={isUploadOpen} onRequestClose={closeUpload} origin={`${origin}`} update={toUpdate}/>
             <Modal isOpen={isModalOpen} onClose={closeModal} onDelete={deleteEntry} isAuth={isLoggedIn} onEdit={editEntry}>
                 <div dangerouslySetInnerHTML={{__html: Md2HTML(tileInfo)}}/>
             </Modal>

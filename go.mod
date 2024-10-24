@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.4
 
 require (
-	github.com/auth0/go-jwt-middleware/v2 v2.2.2
+	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.16.0
 )
 
@@ -20,5 +20,4 @@ require (
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 )

@@ -98,3 +98,41 @@ func (mc *MongoClient) GetPortfolioEntries(ctx context.Context) (interface{}, er
 
 	return entries, nil
 }
+
+func (mc *MongoClient) GetPortfolioEntryByID(ctx context.Context, id string) (interface{}, error) {
+	if id == "" {
+		return nil, nil
+	}
+	collection := mc.client.Database("portfolio").Collection("entries")
+	// Convert entry string to ObjectID
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert entry to ObjectID: %v", err)
+	}
+
+	filter := bson.M{"_id": objID}
+	var tile bson.M
+	err = collection.FindOne(ctx, filter).Decode(&tile)
+	if err != nil {
+		return nil, err
+	} else {
+		return tile, nil
+	}
+}
+
+func (mc *MongoClient) UpdatePortfolioEntry(ctx context.Context, id string, tile interface{}) (interface{}, error) {
+	collection := mc.client.Database("portfolio").Collection("entries")
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert entry to ObjectID: %v", err)
+	}
+
+	update := bson.M{"$set": tile} // Use $set operator to update all fields of the tile object
+
+	result, err := collection.UpdateByID(ctx, objID, update)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update entry: %v", err)
+	}
+
+	return result.ModifiedCount, nil
+}

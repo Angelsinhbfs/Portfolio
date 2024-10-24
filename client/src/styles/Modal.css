@@ -96,12 +96,12 @@ p.indented {
 }
 .update-button {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
+    top: 10px;
+    right: 50px;
 }
 
 .delete-button {
     position: absolute;
-    bottom: 10px;
-    right: 50px;
+    top: 10px;
+    right: 110px;
 }
