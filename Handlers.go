@@ -120,7 +120,7 @@ func PostImg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate the URL for the saved image
-	imageURL := "http://localhost:8080/portfolio/img?filename=" + fileName
+	imageURL := "https://portfolio.dontremember.me/portfolio/img?filename=" + fileName
 
 	// Return the URL in the response
 	w.WriteHeader(http.StatusOK)
@@ -130,18 +130,6 @@ func PostImg(w http.ResponseWriter, r *http.Request) {
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	token, _ := randomHex(20)
 	tokens = append(tokens, token)
-	//// Set the cookie domain to localhost
-	//domain := "localhost" // Update this with your specific domain
-	//
-	//http.SetCookie(w, &http.Cookie{
-	//	Name:     "Authorization",
-	//	Value:    token,
-	//	HttpOnly: true,
-	//	Secure:   false, // Set to true if using HTTPS
-	//	Path:     "/",
-	//	Domain:   domain, // Set the cookie domain here
-	//	SameSite: http.SameSiteNoneMode,
-	//})
 	w.Header().Set("token", token)
 	w.WriteHeader(http.StatusOK)
 }
