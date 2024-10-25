@@ -50,8 +50,6 @@
     border-radius: 5px;
     position: relative;
     overflow: auto;
-    min-height: 80vh;
-    min-width: 80vh;
     max-height: 95vh;
     max-width: 95vw;
     display: flex;
@@ -59,10 +57,9 @@
 
 .modal-input {
     border: 1px solid black;
-    padding: 20px;
-    min-width: 400px;
-    min-height: 400px;
-    flex: 1;
+    padding: 5px;
+    min-width: 50vw;
+    min-height: 90vh;
     display: flex;
     flex-direction: column;
 }
@@ -76,9 +73,9 @@
 }
 
 .modal-preview {
-    padding: 20px;
-    min-width: 400px;
-    height: 80vh;
+    padding: 5px;
+    min-width: 50vw;
+    height: 90vh;
     align-self: flex-end;
     border: 1px solid black;
     overflow-y: auto;
@@ -91,17 +88,17 @@ p.indented {
 
 .close-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 1vh;
+    right: 1vw;
 }
 .update-button {
     position: absolute;
-    top: 10px;
-    right: 50px;
+    top: 1vh;
+    right: 25vw;
 }
 
 .delete-button {
     position: absolute;
-    top: 10px;
-    right: 110px;
+    top: 1vh;
+    right: 10vw;
 }
