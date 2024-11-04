@@ -1,7 +1,6 @@
-version: '3.8'
-
 services:
   app:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
@@ -16,6 +15,7 @@ services:
       - mongo
 
   mongo:
+    restart: unless-stopped
     image: mongo:latest
     ports:
       - "27017:27017"
